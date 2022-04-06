@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - scale.mstrielnikov
+  resources:
+  - demodeployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - scale.mstrielnikov
+  resources:
+  - demodeployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - scale.mstrielnikov
+  resources:
+  - demodeployments/status
+  verbs:
+  - get
+  - patch
+  - update
