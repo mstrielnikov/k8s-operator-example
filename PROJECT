@@ -3,4 +3,14 @@ layout:
 - go.kubebuilder.io/v3
 projectName: k8s-operator-sample
 repo: mstrielnikov/k8s-operator-sample
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: mstrielnikov
+  group: scale
+  kind: DemoDeployment
+  path: mstrielnikov/k8s-operator-sample/api/v1
+  version: v1
 version: "3"

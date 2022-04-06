@@ -1,0 +1,6 @@
+apiVersion: scale.mstrielnikov/v1
+kind: DemoDeployment
+metadata:
+  name: demodeployment-sample
+spec:
+  # TODO(user): Add fields here
