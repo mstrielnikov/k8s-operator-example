@@ -1,0 +1,6 @@
+domain: mstrielnikov
+layout:
+- go.kubebuilder.io/v3
+projectName: k8s-operator-sample
+repo: mstrielnikov/k8s-operator-sample
+version: "3"
