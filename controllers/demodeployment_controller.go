@@ -25,8 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog"
-	// "k8s.io/apimachinery/pkg/api/errors"
 
 	scalev1 "mstrielnikov/k8s-operator-sample/api/v1"
 )
@@ -61,17 +61,43 @@ type DemoDeploymentReconciler struct {
 func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// Operator logic here
 	var demoDeployment scalev1.DemoDeployment
+
 	if err := r.Get(ctx, req.NamespacedName, &demoDeployment); err != nil {
-		klog.Error(err, "unable to fetch scalev1/demoDeployment")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if apierrors.IsNotFound(err) {
+			klog.Error(err, "The scalev1/DemoDeployment object %s is not found", demoDeployment.DemoDeploymentName)
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		} else {
+			klog.Error(err, "unable to fetch scalev1/demoDeployment")
+			return ctrl.Result{}, err
+		}
 	}
-	klog.Infof("Found the DemoDeployment object %v", demoDeployment)
+
+	klog.Infof("Found scalev1/DemoDeployment object %v", demoDeployment)
+
+	// Handle scale error
 	if *demoDeployment.Spec.Replicas > MaxReplicasNum {
-		klog.Error("Unable scale DemoDeployment larger the ", MaxReplicasNum)
+		klog.Error("Unable scalev1/DemoDeployment larger the ", MaxReplicasNum)
 		return ctrl.Result{}, ScaleError
 	}
+
+	if err := r.Update(ctx, &demoDeployment); err != nil {
+		if apierrors.IsConflict(err) {
+			// The DemoDeployment has been updated since we read it.
+			// Requeue the Pod to try to reconciliate again.
+			return ctrl.Result{Requeue: true}, nil
+		}
+		if apierrors.IsNotFound(err) {
+			klog.Error(err, "unable to fetch scalev1/DemoDeployment object %s", demoDeployment.DemoDeploymentName)
+			return ctrl.Result{Requeue: true}, nil
+		} else {
+			klog.Error(err, "unable to update scalev1/DemoDeployment %s", demoDeployment.DemoDeploymentName)
+			return ctrl.Result{}, err
+		}
+	}
+
+	klog.Infof("Successfully updated DemoDeployment %s", demoDeployment.DemoDeploymentName)
 	return ctrl.Result{}, nil
 }
 
