@@ -18,13 +18,25 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"k8s.io/klog"
+	// "k8s.io/apimachinery/pkg/api/errors"
+
 	scalev1 "mstrielnikov/k8s-operator-sample/api/v1"
+)
+
+const (
+	MaxReplicasNum int32 = 2
+)
+
+var (
+	ScaleError error = fmt.Errorf("Unable to scale Demo Deployment replicas greater then %v", MaxReplicasNum)
 )
 
 // DemoDeploymentReconciler reconciles a DemoDeployment object
@@ -50,7 +62,16 @@ func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
-
+	var demoDeployment scalev1.DemoDeployment
+	if err := r.Get(ctx, req.NamespacedName, &demoDeployment); err != nil {
+		klog.Error(err, "unable to fetch scalev1/demoDeployment")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	klog.Infof("Found the DemoDeployment object %v", demoDeployment)
+	if *demoDeployment.Spec.Replicas > MaxReplicasNum {
+		klog.Error("Unable scale DemoDeployment larger the ", MaxReplicasNum)
+		return ctrl.Result{}, ScaleError
+	}
 	return ctrl.Result{}, nil
 }
 
