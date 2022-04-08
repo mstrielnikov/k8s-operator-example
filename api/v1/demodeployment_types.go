@@ -53,7 +53,6 @@ type DemoDeployment struct {
 
 	Spec   DemoDeploymentSpec   `json:"spec,omitempty"`
 	Status DemoDeploymentStatus `json:"status,omitempty"`
-	// Name   string               `json:"name"`
 }
 
 //+kubebuilder:object:root=true
