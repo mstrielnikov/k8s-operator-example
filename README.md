@@ -13,7 +13,7 @@
 * [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 * [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/) as a local K8s test env
 
-## Bootstrap
+## Bootstrap project
 
 1. Init Go lang projet:
  `go mod init github.com/mstrielnikov/k8-operator-sample`
@@ -24,21 +24,21 @@
 3. Generate controller template:
  `kubebuilder create api --group scale --version v1 --kind DemoDeployment`
 
+4. Create K8s test env with Kind:
+  `kind create cluster --name demo-cluster`
+
 ## Install CRD and controller to cluster
 
-0. Build and run controller as a regular programm:
- `make run`
-
-1. Generate manifests:
+1. Generate manifests for CRDs (see [this](https://book.kubebuilder.io/cronjob-tutorial/running-webhook.html) if you need to autogenerate webhooks):
  `make manifests`
 
-2. Install manifests to cluster:
+2. Install CRDs to cluster:
  `make install`
 
-## Deploy controller for CRD
+3. Build and run controller:
+ `make run`
 
-0. Create K8s test env with Kind:
-  `kind create cluster --name demo-cluster`
+## Deploy controller for CRD
 
 1. Build controller:
  `make docker-build IMG=mstrielnikov/demodeployment-controller:v1`
@@ -46,10 +46,10 @@
 2. Load image to cluster:
  `kind load docker-image mstrielnikov/demodeployment-controller:v1 --name demo-cluster`
 
-3. Run controller:
+3. Deploy controller to cluster:
  `make deploy IMG=mstrielnikov/demodeployment-controller:v1`
 
-## Deploy CRD in cluster
+## Demo
 
 Create CRD: 
   `kubectl create -f config/samples/scale_v1_demodeployment.yaml` 
@@ -82,17 +82,81 @@ ___
 
 # Demo
 
-* Check if CRD API deployed `kubectl api-resources | grep DemoDeployment` 
+* Check if CRD API deployed: `kubectl api-resources | grep DemoDeployment` 
 ```
 NAME                       SHORTNAMES   APIVERSION                    NAMESPACED   KIND
 demodeployments                         scale.mstrielnikov/v1         true         DemoDeployment
 ```
 
-* Check is resource running `kubectl get demodeployment.scale.mstrielnikov/demodeployment-sample` 
+* Check is resource running: `kubectl get demodeployment.scale.mstrielnikov/demodeployment-sample` 
 ```
 NAME                    AGE
 demodeployment-sample   19s
 ```
+
+* Find and check appropriate pods are running: `kubectl get pods -A | grep demo`
+```
+NAMESPACE                    NAME                                                      READY   STATUS    RESTARTS        AGE
+default                      demodeployment-sample-88fd7557-tdvr6                      1/1     Running   0               29s
+default                      demodeployment-sample-88fd7557-vt9t8                      1/1     Running   0               29s
+```
+
+* Describe pods: `kubectl describe pod demodeployment-sample-88fd7557-tdvr6`
+```yaml
+Name:         demodeployment-sample-88fd7557-tdvr6
+Namespace:    default
+Priority:     0
+Node:         kind-control-plane/172.18.0.2
+Start Time:   Sun, 10 Apr 2022 21:21:21 +0300
+Labels:       app=demodeployment-sample
+              controller=DemoDeploymentController
+              pod-template-hash=88fd7557
+Annotations:  <none>
+Status:       Running
+IP:           10.244.0.17
+IPs:
+  IP:           10.244.0.17
+Controlled By:  ReplicaSet/demodeployment-sample-88fd7557
+Containers:
+  nginx:
+    Container ID:   containerd://5b4048dab643e36a08d5772ffa3f789e8227b53e239abb8607c8c6064294f438
+    Image:          nginx:1.14.2
+    Image ID:       docker.io/library/nginx@sha256:f7988fb6c02e0ce69257d9bd9cf37ae20a60f1df7563c3a2a6abe24160306b8d
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sun, 10 Apr 2022 21:21:22 +0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-qdn5p (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-qdn5p:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  15m   default-scheduler  Successfully assigned default/demodeployment-sample-88fd7557-tdvr6 to kind-control-plane
+  Normal  Pulled     15m   kubelet            Container image "nginx:1.14.2" already present on machine
+  Normal  Created    15m   kubelet            Created container nginx
+  Normal  Started    15m   kubelet            Started container nginx
+```
+
 
 * Describe and validate CRD resource `kubectl get demodeployments.scale.mstrielnikov -o yaml`
 ```yaml
