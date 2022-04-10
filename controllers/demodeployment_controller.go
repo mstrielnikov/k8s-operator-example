@@ -67,21 +67,36 @@ func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// Operator logic here
 	if err := r.handleCreate(ctx, req); err != nil {
-		return ctrl.Result{}, err
+		if apierrors.IsAlreadyExists(err) {
+			return ctrl.Result{Requeue: true}, nil
+		} else {
+			return ctrl.Result{}, err
+		}
 	}
 
 	if err := r.handleUpdate(ctx, req); err != nil {
-		return ctrl.Result{}, err
-	} else if apierrors.IsConflict(err) {
-		// The DemoDeployment has been updated since we read it.
-		// Requeue the Pod to try to reconciliate again.
-		return ctrl.Result{}, nil
-	} else if apierrors.IsNotFound(err) {
-		klog.Error(err, "object scalev1/DemoDeployment is not found")
-		return ctrl.Result{}, nil
+		if apierrors.IsConflict(err) {
+			// The DemoDeployment has been updated since we read it.
+			// Requeue the Pod to try to reconciliate again.
+			return ctrl.Result{Requeue: true}, nil
+		} else if apierrors.IsNotFound(err) {
+			klog.Error(err, "object scalev1/DemoDeployment is not found")
+			return ctrl.Result{}, err
+		} else {
+			return ctrl.Result{}, err
+		}
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	if err := r.handleList(ctx, req); err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Error(err, "object scalev1/DemoDeployment is not found")
+			return ctrl.Result{}, nil
+		} else {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -90,6 +105,24 @@ func (r *DemoDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&scalev1.DemoDeployment{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
+}
+
+func (r *DemoDeploymentReconciler) handleList(ctx context.Context, req ctrl.Request) error {
+	var demoDeployment scalev1.DemoDeployment
+	if err := r.Get(ctx, req.NamespacedName, &demoDeployment); err != nil {
+		klog.Error(err, "unable to fetch scalev1/demoDeployment %v", demoDeployment)
+		return err
+	}
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(demoDeployment.Namespace),
+		client.MatchingLabels(demoDeployment.GetLabels()),
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		klog.Error(err, "Falied to list pods", "DemoDeployment.Namespace", demoDeployment.Namespace, "DemoDeployment.Name", demoDeployment.Name)
+		return err
+	}
+	return nil
 }
 
 func (r *DemoDeploymentReconciler) handleUpdate(ctx context.Context, req ctrl.Request) error {
