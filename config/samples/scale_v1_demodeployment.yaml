@@ -3,8 +3,7 @@ kind: DemoDeployment
 metadata:
   name: demodeployment-sample
 spec:
-  # TODO(user): Add fields here
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: nginx
