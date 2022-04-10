@@ -22,7 +22,7 @@
  `kubebuilder init --domain demo.domain --repo github.com/mstrielnikov/k8-operator-sample`
 
 3. Generate controller template:
- `kubebuilder create api --group scale --version v1 --kind DemoDeploument`
+ `kubebuilder create api --group scale --version v1 --kind DemoDeployment`
 
 ## Install CRD and controller to cluster
 
