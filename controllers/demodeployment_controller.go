@@ -68,7 +68,7 @@ func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// Operator logic here
 	if err := r.handleCreate(ctx, req); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{}, nil
 		} else {
 			return ctrl.Result{}, err
 		}
@@ -77,12 +77,15 @@ func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if err := r.handleUpdate(ctx, req); err != nil {
 		if apierrors.IsConflict(err) {
 			// The DemoDeployment has been updated since we read it.
-			// Requeue the Pod to try to reconciliate again.
+			// Requeue the DemoDeployment to try to reconciliate again.
 			return ctrl.Result{Requeue: true}, nil
 		} else if apierrors.IsNotFound(err) {
+			// The Pod has been deleted since we read it.
+			// Requeue the Pod to try to reconciliate again.
 			klog.Error(err, "object scalev1/DemoDeployment is not found")
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, nil
 		} else {
+			klog.Error(err, "Unable to update scalev1/DemoDeployment")
 			return ctrl.Result{}, err
 		}
 	}
@@ -193,7 +196,7 @@ func newDemoDeployment(demoDeployment scalev1.DemoDeployment) appsv1.Deployment 
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod" + demoDeployment.Name,
+					Name:      demoDeployment.Name,
 					Namespace: demoDeployment.Namespace,
 					Labels:    labels,
 					// OwnerReferences:            []metav1.OwnerReference{},
