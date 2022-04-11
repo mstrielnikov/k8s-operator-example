@@ -199,18 +199,25 @@ func newDemoDeployment(demoDeployment scalev1.DemoDeployment) appsv1.Deployment 
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: demoDeployment.Spec.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
+			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      demoDeployment.Name,
 					Namespace: demoDeployment.Namespace,
 					Labels:    labels,
-					// OwnerReferences:            []metav1.OwnerReference{},
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(&demoDeployment, schema.GroupVersionKind{
+							Group:   scalev1.GroupVersion.Group,
+							Version: scalev1.GroupVersion.Version,
+							Kind:    demoDeployment.Kind,
+						}),
+					},
 				},
-				Spec: demoDeployment.Spec.Template.Spec,
+				Spec: corev1.PodSpec{
+					Containers: demoDeployment.Spec.Template.Spec.Containers,
+				},
 			},
+			Strategy: appsv1.DeploymentStrategy{},
 		},
 		Status: appsv1.DeploymentStatus{},
 	}
