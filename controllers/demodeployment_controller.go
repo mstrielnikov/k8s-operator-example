@@ -120,7 +120,7 @@ func (r *DemoDeploymentReconciler) handleList(ctx context.Context, req ctrl.Requ
 	}
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.InNamespace(demoDeployment.Namespace),
+		// client.InNamespace(demoDeployment.Namespace),
 		client.MatchingLabels(demoDeployment.GetLabels()),
 	}
 
