@@ -1,0 +1,14 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-manager-rolebinding
+subjects:
+- kind: Group
+  name: system:serviceaccounts:k8s-operator-sample-system
+  apiGroup: rbac.authorization.k8s.io
+  namespace: k8s-operator-sample-system
+roleRef:
+  kind: ClusterRole
+  name: pod-manager-role
+  apiGroup: rbac.authorization.k8s.io
