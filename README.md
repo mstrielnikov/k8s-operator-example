@@ -157,7 +157,6 @@ Events:
   Normal  Started    15m   kubelet            Started container nginx
 ```
 
-
 * Describe and validate CRD resource `kubectl get demodeployments.scale.mstrielnikov -o yaml`
 ```yaml
 apiVersion: v1
@@ -194,6 +193,20 @@ metadata:
   resourceVersion: ""
   selfLink: ""
 
+```
+
+* Find operator pod:
+ `kubectl get pods -A | grep operator-sample`
+ 
+ ```
+ k8s-operator-sample-system   k8s-operator-sample-controller-manager-65ff58d57c-bqx9p   2/2     Running   23 (8h ago)   10h
+ ```
+
+* Attempting to scale DemoDeployment to 3 replicas (using `config/samples/scale_v1_demodeployment_3_replicas.yaml`) and view pod operator logs: 
+` kubectl logs -n k8s-operator-sample-system k8s-operator-sample-controller-manager-65ff58d57c-bqx9p`
+
+```
+1.6496709641609104e+09  ERROR   controller.demodeployment       Reconciler error        {"reconciler group": "scale.mstrielnikov", "reconciler kind": "DemoDeployment", "name": "demodeployment-sample", "namespace": "default", "error": "unable to scale demo deployment replicas greater then 2"}```
 ```
 
 ## Cleanup
