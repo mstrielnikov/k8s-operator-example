@@ -67,35 +67,37 @@ func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// Operator logic here
 	if err := r.handleCreate(ctx, req); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			return ctrl.Result{}, nil
-		} else {
-			return ctrl.Result{}, err
-		}
+		klog.Error(err, "unable to create scalev1/DemoDeployment")
+		return ctrl.Result{}, err
 	}
 
 	if err := r.handleUpdate(ctx, req); err != nil {
 		if apierrors.IsConflict(err) {
 			// The DemoDeployment has been updated since we read it.
 			// Requeue the DemoDeployment to try to reconciliate again.
+			klog.Infof("DemoDeployment has been updated since we read")
 			return ctrl.Result{Requeue: true}, nil
+
 		} else if apierrors.IsNotFound(err) {
-			// The Pod has been deleted since we read it.
-			// Requeue the Pod to try to reconciliate again.
+			// The DemoDeployment has been deleted since we read it.
+			// Requeue the DemoDeployment to try to reconciliate again.
 			klog.Error(err, "object scalev1/DemoDeployment is not found")
 			return ctrl.Result{Requeue: true}, nil
 		} else {
-			klog.Error(err, "Unable to update scalev1/DemoDeployment")
+			klog.Error(err, "unable to update scalev1/DemoDeployment")
 			return ctrl.Result{}, err
 		}
 	}
 
 	if err := r.handleList(ctx, req); err != nil {
 		if apierrors.IsNotFound(err) {
+			// The DemoDeployment has been deleted since we read it.
+			// Requeue the DemoDeployment to try to reconciliate again.
 			klog.Error(err, "object scalev1/DemoDeployment is not found")
-			return ctrl.Result{}, nil
+			return ctrl.Result{Requeue: true}, nil
 		} else {
-			return ctrl.Result{}, err
+			klog.Error(err, "unable to list object scalev1/DemoDeployment")
+			return ctrl.Result{}, nil
 		}
 	}
 
@@ -121,10 +123,12 @@ func (r *DemoDeploymentReconciler) handleList(ctx context.Context, req ctrl.Requ
 		client.InNamespace(demoDeployment.Namespace),
 		client.MatchingLabels(demoDeployment.GetLabels()),
 	}
+
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		klog.Error(err, "Falied to list pods", "DemoDeployment.Namespace", demoDeployment.Namespace, "DemoDeployment.Name", demoDeployment.Name)
 		return err
 	}
+	klog.Infof("Successfully listed DemoDeployment %s", demoDeployment.Name)
 	return nil
 }
 
@@ -134,7 +138,7 @@ func (r *DemoDeploymentReconciler) handleUpdate(ctx context.Context, req ctrl.Re
 		klog.Error(err, "unable to fetch scalev1/demoDeployment %v", demoDeployment)
 		return err
 	}
-	// Handle scale error
+	// // Handle scale error
 	if *demoDeployment.Spec.Replicas > MaxReplicasNum {
 		klog.Error(ErrScale, "Unable to create scalev1/DemoDeployment with replicas num larger then", MaxReplicasNum)
 		return ErrScale
@@ -155,15 +159,19 @@ func (r *DemoDeploymentReconciler) handleCreate(ctx context.Context, req ctrl.Re
 	}
 	// Handle scale error
 	if *demoDeployment.Spec.Replicas > MaxReplicasNum {
-		klog.Error(ErrScale, "Unable to create scalev1/DemoDeployment with replicas num larger then", MaxReplicasNum)
+		klog.Error(ErrScale, "unable to create scalev1/DemoDeployment with replicas num larger then", MaxReplicasNum)
 		return ErrScale
 	}
 	deployment := newDemoDeployment(demoDeployment)
-	if err := r.Create(ctx, &deployment); err != nil {
-		klog.Error(err, "Failed to create new Deployment ", "Deployment.Namespace ", deployment.Namespace, "Deployment.Name ", deployment.Name)
+	err := r.Create(ctx, &deployment)
+	if apierrors.IsAlreadyExists(err) {
+		klog.Info(err, "DemoDeployment in namespace ", deployment.Namespace, "Deployment.Name ", deployment.Name, "exists already")
+		return nil
+	}
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		klog.Error(err, "failed to create new Deployment ", "Deployment.Namespace ", deployment.Namespace, "Deployment.Name ", deployment.Name)
 		return err
 	}
-	klog.Infof("Found scalev1/DemoDeployment object %v", deployment)
 	return nil
 }
 
