@@ -120,7 +120,7 @@ func (r *DemoDeploymentReconciler) handleList(ctx context.Context, req ctrl.Requ
 	}
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		// client.InNamespace(demoDeployment.Namespace),
+		client.InNamespace(demoDeployment.Namespace),
 		client.MatchingLabels(demoDeployment.GetLabels()),
 	}
 
@@ -178,6 +178,7 @@ func (r *DemoDeploymentReconciler) handleCreate(ctx context.Context, req ctrl.Re
 func newDemoDeployment(demoDeployment scalev1.DemoDeployment) appsv1.Deployment {
 	labels := map[string]string{
 		"app":        demoDeployment.Name,
+		"namespace":  demoDeployment.Namespace,
 		"controller": DemoDeploymentController,
 	}
 	return appsv1.Deployment{
