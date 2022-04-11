@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	scalev1 "mstrielnikov/k8s-operator-sample/api/v1"
 
@@ -35,13 +34,12 @@ import (
 )
 
 const (
-	MaxReplicasNum           int32 = 2
-	DemoDeploymentController       = "DemoDeploymentController"
+	DemoDeploymentController = "DemoDeploymentController"
 )
 
-var (
-	ErrScale = fmt.Errorf("unable to scale demo deployment replicas greater then %v", MaxReplicasNum)
-)
+// var (
+// 	ErrScale = fmt.Errorf("unable to scale demo deployment replicas greater then %v", MaxReplicasNum)
+// )
 
 // DemoDeploymentReconciler reconciles a DemoDeployment object
 type DemoDeploymentReconciler struct {
@@ -139,10 +137,10 @@ func (r *DemoDeploymentReconciler) handleUpdate(ctx context.Context, req ctrl.Re
 		return err
 	}
 	// // Handle scale error
-	if *demoDeployment.Spec.Replicas > MaxReplicasNum {
-		klog.Error(ErrScale, "Unable to create scalev1/DemoDeployment with replicas num larger then", MaxReplicasNum)
-		return ErrScale
-	}
+	// if *demoDeployment.Spec.Replicas > MaxReplicasNum {
+	// 	klog.Error(ErrScale, "Unable to create scalev1/DemoDeployment with replicas num larger then", MaxReplicasNum)
+	// 	return ErrScale
+	// }
 	if err := r.Update(ctx, &demoDeployment); err != nil {
 		klog.Error(err, "unable to update scalev1/DemoDeployment %s", demoDeployment.Name)
 		return err
@@ -157,11 +155,11 @@ func (r *DemoDeploymentReconciler) handleCreate(ctx context.Context, req ctrl.Re
 		klog.Error(err, "unable to fetch scalev1/demoDeployment %v", demoDeployment)
 		return err
 	}
-	// Handle scale error
-	if *demoDeployment.Spec.Replicas > MaxReplicasNum {
-		klog.Error(ErrScale, "unable to create scalev1/DemoDeployment with replicas num larger then", MaxReplicasNum)
-		return ErrScale
-	}
+	// // Handle scale error
+	// if *demoDeployment.Spec.Replicas > MaxReplicasNum {
+	// 	klog.Error(ErrScale, "unable to create scalev1/DemoDeployment with replicas num larger then", MaxReplicasNum)
+	// 	return ErrScale
+	// }
 	deployment := newDemoDeployment(demoDeployment)
 	err := r.Create(ctx, &deployment)
 	if apierrors.IsAlreadyExists(err) {

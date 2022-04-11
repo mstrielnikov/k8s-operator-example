@@ -17,11 +17,18 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
+
+const MaxReplicasNum int32 = 2
+
+var ErrScale error = fmt.Errorf("unable to scale demo deployment replicas greater then %v", MaxReplicasNum)
 
 // log is for logging in this package.
 var demodeploymentlog = logf.Log.WithName("demodeployment-resource")
@@ -53,16 +60,23 @@ var _ webhook.Validator = &DemoDeployment{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *DemoDeployment) ValidateCreate() error {
 	demodeploymentlog.Info("validate create", "name", r.Name)
+	// Handle scale error
+	if *r.Spec.Replicas > MaxReplicasNum {
+		klog.Error(ErrScale, "unable to create scalev1/DemoDeployment ", r.Name, " with replicas num larger then", MaxReplicasNum)
+		return ErrScale
+	}
 
-	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *DemoDeployment) ValidateUpdate(old runtime.Object) error {
 	demodeploymentlog.Info("validate update", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
+	// Handle scale error
+	if *r.Spec.Replicas > MaxReplicasNum {
+		klog.Error(ErrScale, "Unable to create scalev1/DemoDeployment ", r.Name, " with replicas num larger then", MaxReplicasNum)
+		return ErrScale
+	}
 	return nil
 }
 
