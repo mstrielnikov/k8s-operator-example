@@ -1,53 +1,64 @@
 # k8s-operator-sample
 
 ## Usefull reading
+
 * [K8s types and common machinery](https://iximiuz.com/en/posts/kubernetes-api-go-types-and-common-machinery/)
 * [K8s official docs: develop simple controller](https://kubernetes.io/blog/2021/06/21/writing-a-controller-for-pod-labels/)
 * [K8s official docs: extend API with CRDs](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)
+* [Openssl to generate cetificate for cert manager](https://gist.github.com/fntlnz/cf14feb5a46b2eda428e000157447309)
 
-## Requirements
+## Requirements & dependencies
 
 * [Go lang](https://go.dev/doc/install)
 * [Kubebuilder](https://book.kubebuilder.io/quick-start.html) (note that latest Kubebuilder version does not works with Go 1.18)
 * [Docker](https://www.docker.com/get-started/)
 * [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 * [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/) as a local K8s test env
+* [Cert-manager](https://cert-manager.io/docs/installation/)
 
 ## Bootstrap project
 
 1. Init Go lang projet:
- `go mod init github.com/mstrielnikov/k8-operator-sample`
+  `go mod init github.com/mstrielnikov/k8-operator-sample`
 
 2. Bootsrap Kubebuilder project:
- `kubebuilder init --domain demo.domain --repo github.com/mstrielnikov/k8-operator-sample`
+  `kubebuilder init --domain demo.domain --repo github.com/mstrielnikov/k8-operator-sample`
 
 3. Generate controller template:
- `kubebuilder create api --group scale --version v1 --kind DemoDeployment`
+  `kubebuilder create api --group scale --version v1 --kind DemoDeployment`
 
-4. Create K8s test env with Kind:
+## Bootstrap cluster
+
+1. Create K8s test env with Kind:
   `kind create cluster --name demo-cluster`
+
+2. Create webhook k8s objects:
+  `kubebuilder create webhook --group scale --version v1 --kind DemoDeployment --defaulting --programmatic-validation`
+
+3. Install [cert-manager](https://cert-manager.io/docs/installation/) to cluster:
+  `kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.8.0/cert-manager.yaml`
 
 ## Install CRD and controller to cluster
 
 1. Generate manifests for CRDs (see [this](https://book.kubebuilder.io/cronjob-tutorial/running-webhook.html) if you need to autogenerate webhooks):
- `make manifests`
+  `make manifests`
 
 2. Install CRDs to cluster:
- `make install`
+  `make install`
 
 3. Build and run controller:
- `make run`
+  `make run`
 
 ## Deploy controller for CRD
 
 1. Build controller:
- `make docker-build IMG=mstrielnikov/demodeployment-controller:v1`
+  `make docker-build IMG=mstrielnikov/demodeployment-controller:v1`
 
 2. Load image to cluster:
- `kind load docker-image mstrielnikov/demodeployment-controller:v1 --name demo-cluster`
+  `kind load docker-image mstrielnikov/demodeployment-controller:v1 --name demo-cluster`
 
 3. Deploy controller to cluster:
- `make deploy IMG=mstrielnikov/demodeployment-controller:v1`
+  `make deploy IMG=mstrielnikov/demodeployment-controller:v1`
 
 ## Demo
 
@@ -192,18 +203,17 @@ kind: List
 metadata:
   resourceVersion: ""
   selfLink: ""
-
 ```
 
 * Find operator pod:
- `kubectl get pods -A | grep operator-sample`
+  `kubectl get pods -A | grep operator-sample`
  
  ```
  k8s-operator-sample-system   k8s-operator-sample-controller-manager-65ff58d57c-bqx9p   2/2     Running   23 (8h ago)   10h
  ```
 
 * Attempting to scale DemoDeployment to 3 replicas (using `config/samples/scale_v1_demodeployment_3_replicas.yaml`) and view pod operator logs: 
-` kubectl logs -n k8s-operator-sample-system k8s-operator-sample-controller-manager-65ff58d57c-bqx9p`
+  `kubectl logs -n k8s-operator-sample-system k8s-operator-sample-controller-manager-65ff58d57c-bqx9p`
 
 ```
 1.6496709641609104e+09  ERROR   controller.demodeployment       Reconciler error        {"reconciler group": "scale.mstrielnikov", "reconciler kind": "DemoDeployment", "name": "demodeployment-sample", "namespace": "default", "error": "unable to scale demo deployment replicas greater then 2"}```
