@@ -63,11 +63,10 @@ type DemoDeploymentReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
 
 	// Operator logic here
 	if err := r.handleCreate(ctx, req); err != nil {
-		klog.Error(err, "unable to create scalev1/DemoDeployment")
 		return ctrl.Result{}, err
 	}
 
@@ -75,16 +74,14 @@ func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if apierrors.IsConflict(err) {
 			// The DemoDeployment has been updated since we read it.
 			// Requeue the DemoDeployment to try to reconciliate again.
-			klog.Infof("DemoDeployment has been updated since we read")
+			log.Info("DemoDeployment has been updated since we read")
 			return ctrl.Result{Requeue: true}, nil
-
 		} else if apierrors.IsNotFound(err) {
 			// The DemoDeployment has been deleted since we read it.
 			// Requeue the DemoDeployment to try to reconciliate again.
-			klog.Error(err, "object scalev1/DemoDeployment is not found")
+			log.Info("object scalev1/DemoDeployment is not found")
 			return ctrl.Result{Requeue: true}, nil
 		} else {
-			klog.Error(err, "unable to update scalev1/DemoDeployment")
 			return ctrl.Result{}, err
 		}
 	}
@@ -93,10 +90,9 @@ func (r *DemoDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if apierrors.IsNotFound(err) {
 			// The DemoDeployment has been deleted since we read it.
 			// Requeue the DemoDeployment to try to reconciliate again.
-			klog.Error(err, "object scalev1/DemoDeployment is not found")
+			log.Info("object scalev1/DemoDeployment is not found")
 			return ctrl.Result{Requeue: true}, nil
 		} else {
-			klog.Error(err, "unable to list object scalev1/DemoDeployment")
 			return ctrl.Result{}, nil
 		}
 	}
