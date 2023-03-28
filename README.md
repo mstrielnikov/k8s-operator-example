@@ -1,6 +1,6 @@
-# k8s-operator-sample
+# K8s Operator example
 
-## Usefull reading
+## References
 * [K8s types and common machinery](https://iximiuz.com/en/posts/kubernetes-api-go-types-and-common-machinery/)
 * [K8s official docs: develop simple controller](https://kubernetes.io/blog/2021/06/21/writing-a-controller-for-pod-labels/)
 * [K8s official docs: extend API with CRDs](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)
